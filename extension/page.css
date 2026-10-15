@@ -1,0 +1,17 @@
+/* Único estilo que se aplica a la propia página: el resaltado del botón que hay que pulsar.
+   El resto de la interfaz vive en un Shadow DOM (ui.css) para no chocar con la web. */
+.guia-tramites-resaltado {
+  outline: 3px solid #c8102e !important;
+  outline-offset: 3px !important;
+  border-radius: 4px !important;
+  animation: guia-tramites-pulso 1.4s ease-in-out infinite !important;
+}
+
+@keyframes guia-tramites-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(200, 16, 46, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guia-tramites-resaltado { animation: none !important; }
+}

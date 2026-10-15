@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Guía de trámites València",
+  "version": "0.1.0",
+  "description": "Asistente que te guía, botón a botón, hasta el trámite que quieres hacer en la web del Ayuntamiento de València.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.valencia.es/*",
+        "https://sede.valencia.es/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "page.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/murcielago-base.svg",
+        "icons/murcielago-vuelo1.svg",
+        "icons/murcielago-vuelo2.svg",
+        "ui.css"
+      ],
+      "matches": [
+        "https://www.valencia.es/*",
+        "https://sede.valencia.es/*"
+      ]
+    }
+  ],
+  "commands": {
+    "escuchar": {
+      "suggested_key": {
+        "default": "Alt+G"
+      },
+      "description": "Preguntar a la guía por voz"
+    }
+  }
+}

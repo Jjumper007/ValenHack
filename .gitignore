@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+# Cookies de sesión para el crawler: dan acceso a tu cuenta
+cookies.txt
+*.cookies.txt
+# Búsquedas guardadas por servidor.py (se regeneran solas)
+backend/cache_busquedas.json
+backend/cache_busquedas.json.tmp

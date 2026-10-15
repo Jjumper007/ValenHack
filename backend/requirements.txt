@@ -1,0 +1,2 @@
+# Solo para el modo "claude" de buscador.py; crawler.py y el modo léxico usan la biblioteca estándar
+anthropic>=1.14

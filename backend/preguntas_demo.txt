@@ -1,0 +1,8 @@
+# Preguntas de la presentación, una por línea. Antes de presentar:
+#   python servidor.py --precalentar preguntas_demo.txt
+# y en la demo hay que escribirlas (o decirlas) igual; mayúsculas, tildes y
+# signos dan igual.
+quiero pagar los tributos municipales
+necesito el informe para traer a mi familia a vivir conmigo a España
+me he mudado de piso
+quiero el certificado de empadronamiento
