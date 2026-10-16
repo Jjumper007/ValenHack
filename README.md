@@ -9,6 +9,12 @@ Sede Electrónica. Con la guía basta con decir qué necesitas («me he mudado d
 hasta el enlace que tienes que pulsar en cada página y te acompaña hasta la ficha
 del trámite.
 
+> **Proyecto de hackathon.** Es un prototipo hecho en pocas horas para demostrar la
+> idea: funciona en local, en tu propio ordenador y con tu cuenta de Claude. Varias
+> decisiones (el servidor local, el rastreo de la web, el dictado de Chrome…) se
+> tomaron por rapidez y no son las que usaríamos para ponerlo en marcha de verdad.
+> Ver [Si se llevara a producción](#si-se-llevara-a-producción).
+
 ## Qué hace
 
 - **Entiende la pregunta.** Claude elige, de entre los ~950 trámites y páginas
@@ -174,6 +180,33 @@ Tarda unos minutos y escribe `graphify-out/graph.json` (reinicia el servidor des
 | «No tengo permiso para usar el micrófono» | Candado de la barra de direcciones → permitir micrófono. |
 | La búsqueda tarda 6-8 s | Es la llamada a Claude. Usa `--modelo haiku` o precalienta la caché. |
 | «Esta página no está en mi mapa» | La página no está en el grafo: vuelve a la portada o regenera el mapa. |
+
+## Si se llevara a producción
+
+Este prototipo prioriza tener algo funcionando para la demo. Para ofrecerlo a la
+ciudadanía lo plantearíamos de otra forma:
+
+- **Integrado en la web, sin extensión.** Un asistente incrustado por el propio
+  Ayuntamiento en valencia.es y la Sede llega a todo el mundo, también en el móvil,
+  sin instalar nada.
+- **Servidor en la nube, no en local.** El buscador correría en un servidor del
+  proyecto con un llm instructor local. El modo actual con Claude Code usa la cuenta personal de quien lo ejecuta,
+  que solo sirve para desarrollar y hacer demos.
+- **Datos oficiales en lugar de rastrear.** El mapa se construiría a partir del
+  catálogo de procedimientos de la Sede y de la estructura de la web que mantiene el
+  Ayuntamiento, no adivinándolo con un rastreador. Hoy el mapa depende de cómo se ve
+  la web en el momento del rastreo y de su horario de rastreo permitido.
+- **Enlaces estables.** Para señalar botones se acordarían con quien mantiene la web
+  identificadores fijos en los enlaces importantes. Ahora se localizan por `href` o
+  por texto, y un rediseño de la web los rompería.
+- **Zona privada sin cookies personales.** Los pasos que requieren identificarse
+  (Cl@ve, certificado) se mapearían con una cuenta de pruebas o con información del
+  propio Ayuntamiento, nunca con la sesión de una persona.
+- **Voz con privacidad.** El dictado de Chrome envía el audio a Google. En un
+  servicio público usaríamos reconocimiento de voz en el propio dispositivo o en un
+  servidor propio, con la información de protección de datos correspondiente.
+- **Medir la calidad.** Un conjunto de preguntas reales con su trámite correcto
+  para comprobar cuántas acierta el buscador antes de cada cambio.
 
 ## Icono
 
