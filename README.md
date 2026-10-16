@@ -1,98 +1,184 @@
 # Guía de trámites València
 
-Asistente para la web del Ayuntamiento de València: preguntas qué trámite quieres
-hacer y un icono te va llevando, botón a botón, hasta la página donde se hace.
+Extensión de Chrome que te guía, botón a botón, hasta el trámite que quieres hacer
+en la web del Ayuntamiento de València.
+
+La web municipal es grande y los trámites están repartidos entre www.valencia.es y la
+Sede Electrónica. Con la guía basta con decir qué necesitas («me he mudado de piso»,
+«quiero pagar los tributos municipales»). Un murciélago aparece en la esquina, vuela
+hasta el enlace que tienes que pulsar en cada página y te acompaña hasta la ficha
+del trámite.
+
+## Qué hace
+
+- **Entiende la pregunta.** Claude elige, de entre los ~950 trámites y páginas
+  informativas de la web, los que encajan con lo que pides, aunque no uses las
+  palabras exactas de la web.
+- **Calcula el camino.** Sobre un mapa de la web (un grafo de páginas y enlaces
+  generado con un rastreador), busca la ruta más corta desde la página en la que
+  estás hasta la del trámite. El camino sale siempre del mapa: no se inventan enlaces.
+- **Te lleva de la mano.** En cada página resalta el enlace que hay que pulsar y el
+  icono vuela hasta él. Si el enlace está dentro de un menú plegado, primero te
+  señala el menú. Si te sales del camino, recalcula la ruta desde donde estés.
+- **Por voz.** Pulsa **Alt+G**, di qué trámite buscas y empieza sola.
+- **Rápida.** Precarga en segundo plano la página del siguiente paso y guarda las
+  respuestas de Claude, así que repetir una pregunta es instantáneo.
+
+## Cómo está hecho
 
 ```
-backend/
-  crawler.py       rastrea la web y genera el mapa (grafo de páginas y enlaces)
-  buscador.py      pregunta -> trámite -> camino de clics sobre el grafo
-  servidor.py      expone el buscador en http://127.0.0.1:8765 para la extensión
-  graphify-out/graph.json   el mapa
-extension/         extensión de Chrome (Manifest V3)
+backend/                     Python, solo biblioteca estándar (+ anthropic opcional)
+  crawler.py                 rastrea la web y genera el mapa
+  buscador.py                pregunta -> trámite -> camino de clics
+  servidor.py                expone el buscador en http://127.0.0.1:8765
+  graphify-out/graph.json    el mapa (páginas, enlaces y tipo de cada página)
+  preguntas_demo.txt         preguntas para precalentar la caché
+extension/                   extensión de Chrome (Manifest V3)
+  content.js                 el asistente: icono, panel, voz y guía paso a paso
+  background.js              habla con el servidor local y recibe el atajo de teclado
+  ui.css, page.css           estilos del asistente y del resaltado
+  icons/                     fotogramas del murciélago
 ```
 
-## Probarlo en local
+1. La extensión envía la pregunta y la URL actual al servidor local.
+2. El servidor pide a Claude que elija el trámite y calcula la ruta en el grafo.
+   Cada paso es «en la página X, pulsa el enlace Y».
+3. La extensión guarda la guía en `chrome.storage`. En cada página localiza el enlace
+   del paso (por su `href`, por su destino o por su texto), lo resalta y mueve el
+   icono a su lado. El clic lo hace el usuario.
 
-1. **Arranca el servidor** (necesita Python 3.10+):
-   ```
-   cd backend
-   python servidor.py
-   ```
-   Para entender preguntas en lenguaje natural usa Claude a través de Claude Code
-   (`claude -p`, con tu cuenta) o de la API si hay `ANTHROPIC_API_KEY`; si no hay
-   ninguno, usa una búsqueda léxica local. `python servidor.py --modelo haiku`
-   gasta menos cuota del plan.
+## Instalación
 
-2. **Carga la extensión** en Chrome:
-   `chrome://extensions` → activa *Modo de desarrollador* → *Cargar descomprimida*
-   → elige la carpeta `extension/`.
+### Requisitos
 
-3. Abre https://www.valencia.es/cas/inicio, pulsa el icono de la esquina inferior
-   derecha y escribe, por ejemplo, «quiero el certificado de empadronamiento».
+- **Google Chrome** (o Edge u otro navegador basado en Chromium).
+- **Python 3.10 o superior.** Compruébalo con `python --version`.
+- **Claude**, para entender preguntas en lenguaje natural. Vale cualquiera de las dos
+  opciones; sin ninguna, funciona con una búsqueda por palabras, más limitada:
+  - [Claude Code](https://claude.com/claude-code) instalado y con sesión iniciada
+    (usa tu plan de Claude; no necesita clave de API), o
+  - una clave de la API de Anthropic en la variable `ANTHROPIC_API_KEY` y el paquete
+    `anthropic` (`pip install -r backend/requirements.txt`).
 
-Tras cambiar el código de la extensión, pulsa *Actualizar* en `chrome://extensions`
-y recarga la página.
+### 1. Descargar el proyecto
 
-## Cómo funciona
+```
+git clone <url-del-repositorio>
+cd <carpeta-del-repositorio>
+```
 
-1. El icono envía la pregunta y la URL actual al servidor (vía `background.js`).
-2. El servidor elige el trámite y calcula el camino más corto en el grafo:
-   cada paso es «en la página X, pulsa el enlace Y».
-3. La extensión guarda la guía en `chrome.storage` y, en cada página, busca el
-   enlace del paso (por `href`, por destino o por texto), lo resalta y mueve el
-   icono a su lado. El usuario hace el clic.
-4. Si el usuario se sale del camino, se recalcula desde la página actual
-   (`POST /ruta`, sin volver a llamar a Claude).
+### 2. Arrancar el servidor
 
-## Preparar una presentación
+```
+cd backend
+python servidor.py
+```
 
-1. Escribe las preguntas de la demo en `backend/preguntas_demo.txt` y arranca el
-   servidor precalentando la caché:
+Debe mostrar `Servidor de la guía en http://127.0.0.1:8765 (941 páginas en el mapa)`.
+Déjalo abierto mientras uses la extensión. Para comprobar que responde, abre
+http://127.0.0.1:8765/salud en el navegador.
+
+Opciones útiles:
+
+| Opción | Para qué |
+|---|---|
+| `--modelo haiku` | gasta menos cuota del plan de Claude |
+| `--precalentar preguntas_demo.txt` | busca esas preguntas antes de arrancar (ver *Presentaciones*) |
+| `--sin-cache` | no reutiliza búsquedas anteriores |
+| `--puerto 9000` | otro puerto (hay que cambiarlo también en `extension/background.js` y `manifest.json`) |
+
+### 3. Cargar la extensión en Chrome
+
+1. Abre `chrome://extensions`.
+2. Activa **Modo de desarrollador** (arriba a la derecha).
+3. Pulsa **Cargar descomprimida** y elige la carpeta `extension/` del proyecto.
+
+Aparecerá «Guía de trámites València» en la lista. Si cambias el código de la
+extensión, pulsa su botón **Actualizar** y recarga la página de valencia.es.
+
+### 4. Probarla
+
+1. Abre https://www.valencia.es/cas/inicio. Verás el murciélago en la esquina
+   inferior derecha.
+2. Púlsalo y escribe, por ejemplo, «quiero el certificado de empadronamiento», o
+   pulsa **Alt+G** y dilo en voz alta.
+3. Pulsa **Guíame** y sigue al murciélago.
+
+## Uso
+
+- **Por texto:** pulsa el murciélago, escribe y pulsa *Buscar* (o Intro).
+- **Por voz:** pulsa **Alt+G** en cualquier página de valencia.es (o *Hablar* en el
+  panel). Al dejar de hablar, busca lo que ha entendido. Pulsar Alt+G otra vez
+  termina de escuchar; Escape cancela.
+  - La primera vez Chrome pide permiso de micrófono, una vez para www.valencia.es y
+    otra para sede.valencia.es.
+  - El dictado usa la Web Speech API de Chrome: el audio lo transcriben servidores de
+    Google, así que necesita conexión.
+  - El atajo se cambia en `chrome://extensions/shortcuts`.
+- **Durante la guía:** pulsa el murciélago para ver u ocultar el paso actual, o
+  *Cancelar guía* para dejarla. La guía sigue aunque cambies de página o abras el
+  enlace en otra pestaña.
+
+## Presentaciones
+
+Para que la demo vaya fluida:
+
+1. Escribe las preguntas de la demo en `backend/preguntas_demo.txt` (una por línea)
+   y arranca el servidor con
    ```
    python servidor.py --precalentar preguntas_demo.txt
    ```
-   Cada búsqueda con Claude se guarda en `backend/cache_busquedas.json`: repetir la
-   pregunta (aunque cambien mayúsculas, tildes o signos) responde al instante y sin
-   gastar cuota. La caché se descarta sola si se regenera el grafo.
-2. Haz la ruta una vez completa en la misma ventana de Chrome antes de presentar,
-   para que imágenes, CSS y JS de la web queden en la caché del navegador.
+   Las respuestas de Claude se guardan en `backend/cache_busquedas.json`. En la demo,
+   la misma pregunta (aunque cambien mayúsculas, tildes o signos) responde al
+   instante. La caché se descarta sola si se regenera el mapa.
+2. Haz cada ruta una vez en la misma ventana de Chrome antes de presentar, para que
+   las imágenes de la web queden en la caché del navegador.
 
-Durante la guía, la extensión pide a Chrome que precargue la página del siguiente
-paso (Speculation Rules): dentro de www.valencia.es se renderiza entera en segundo
-plano y aparece al instante al pulsar; hacia sede.valencia.es solo se adelanta el
-HTML. Se puede comprobar en DevTools → Application → Speculative loads.
-
-## Preguntar por voz
-
-Pulsa **Alt+G** en cualquier página de valencia.es (o el botón «Hablar» del panel),
-di qué trámite quieres hacer y, al dejar de hablar, la guía lo busca. Pulsar el atajo
-otra vez termina de escuchar; Escape cancela. El atajo se cambia en
-`chrome://extensions/shortcuts`.
-
-Usa la Web Speech API de Chrome: la primera vez pide permiso de micrófono (una vez
-para www.valencia.es y otra para sede.valencia.es) y el audio lo transcriben los
-servidores de Google, así que necesita conexión.
-
-## Icono
-
-`extension/icons/murcielago-base.svg` (parado) y `murcielago-vuelo1/2.svg` (alas
-arriba / abajo, que se alternan al volar). Se generan a partir de los SVG originales
-de diseño con el mismo encuadre cuadrado para los tres, y el fotograma 2 desplazado
-para que la cabeza coincida con la del 1 (si no, el murciélago tiembla al aletear).
-Si se sustituyen, hay que conservar esos dos requisitos.
+Durante la guía, la extensión ya precarga la página del siguiente paso. Dentro de
+www.valencia.es la página aparece al instante; hacia la Sede solo se adelanta el
+HTML. Se puede comprobar en DevTools → *Application* → *Speculative loads*.
 
 ## Regenerar el mapa
+
+El mapa incluido es una foto de la web en un momento dado. Para actualizarlo:
 
 ```
 cd backend
 python crawler.py https://www.valencia.es/cas/inicio
-python crawler.py https://www.valencia.es/cas/inicio --cookies cookies.txt   # con sesión iniciada
 ```
-La Sede Electrónica solo permite rastrear de 02:00 a 07:45 UTC (`Visit-time` de su
-robots.txt); el crawler lo respeta. `cookies.txt` da acceso a tu cuenta: no lo subas.
 
-## Pendiente
+Tarda unos minutos y escribe `graphify-out/graph.json` (reinicia el servidor después).
 
-- Rastrear la Sede dentro de su horario y con sesión, para completar los pasos
-  que requieren identificarse.
+- **Qué guarda:** solo las páginas útiles para llegar a un trámite. Descarta
+  noticias, agenda, páginas legales, la versión en valenciano, documentos y webs no
+  oficiales (ver `DEFAULT_EXCLUDES` en `crawler.py`).
+- **Horario de la Sede:** la Sede Electrónica pide en su robots.txt que solo se la
+  rastree de 02:00 a 07:45 UTC, y el crawler lo respeta. Fuera de ese horario sus
+  fichas entran en el mapa como destinos, pero no se exploran sus páginas internas.
+- **Páginas con login:** para incluirlas, inicia sesión en el navegador, exporta las
+  cookies en formato `cookies.txt` (por ejemplo con la extensión «Get cookies.txt
+  LOCALLY») y ejecuta
+  `python crawler.py https://www.valencia.es/cas/inicio --cookies cookies.txt`.
+  Ese archivo da acceso a tu cuenta: no lo compartas ni lo subas al repositorio (ya
+  está en `.gitignore`).
+- **Contenido variable:** la web cambia de contenido entre visitas (portada,
+  campañas), así que dos rastreos seguidos pueden dar mapas algo distintos.
+
+## Problemas frecuentes
+
+| Síntoma | Solución |
+|---|---|
+| «No puedo conectar con el servidor local» | Arranca `python servidor.py` en `backend/`. |
+| No aparece el murciélago | Comprueba que la extensión está activada en `chrome://extensions` y recarga la página. Solo funciona en www.valencia.es y sede.valencia.es. |
+| Alt+G no hace nada | Puede que otra extensión ya use ese atajo: revísalo en `chrome://extensions/shortcuts`. |
+| «No tengo permiso para usar el micrófono» | Candado de la barra de direcciones → permitir micrófono. |
+| La búsqueda tarda 6-8 s | Es la llamada a Claude. Usa `--modelo haiku` o precalienta la caché. |
+| «Esta página no está en mi mapa» | La página no está en el grafo: vuelve a la portada o regenera el mapa. |
+
+## Icono
+
+`extension/icons/murcielago-base.svg` es el murciélago parado, y
+`murcielago-vuelo1.svg` / `murcielago-vuelo2.svg` los dos fotogramas de alas que se
+alternan al volar. Los tres comparten el mismo encuadre cuadrado, y el fotograma 2
+está desplazado para que la cabeza coincida con la del 1 (si no, el murciélago
+tiembla al aletear). Si se sustituyen, hay que conservar esos dos requisitos.
