@@ -15,6 +15,8 @@ del trámite.
 > tomaron por rapidez y no son las que usaríamos para ponerlo en marcha de verdad.
 > Ver [Si se llevara a producción](#si-se-llevara-a-producción).
 
+Se pueden ver capturas de como funciona la extensión en docs/capturas
+
 ## Qué hace
 
 - **Entiende la pregunta.** Claude elige, de entre los ~950 trámites y páginas
